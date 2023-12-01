@@ -1,10 +1,15 @@
 import re
+
+import nltk
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import string
 
 
 # list(encoded.A[0])
-def get_binary_repr(mappers_and_encoders, json_obj):
+def get_binary_repr(mappers_and_encoders, ohe_title, json_obj):
     signature = []
     features = json_obj['featuresMap']
     for me in mappers_and_encoders:
@@ -21,8 +26,11 @@ def get_binary_repr(mappers_and_encoders, json_obj):
             for b in combined:
                 signature.append(b)
         else:
-            for b in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
+            for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
                 signature.append(0)
+    title = json_obj["title"]
+    for b in get_binary_repr_for_title(title, ohe_title):
+        signature.append(b)
     return signature
 
 
@@ -99,12 +107,13 @@ def _handle_boolean(values):
 def _handle_inches(values):
     map = {}
     for x in set(values):
-        temp = "".join([i for i in x.replace("\"", "") if (i.isnumeric() or i in["/",",",".","-"," "])])  # remove inches
+        temp = "".join(
+            [i for i in x.replace("\"", "") if (i.isnumeric() or i in ["/", ",", ".", "-", " "])])  # remove inches
         s = temp.split("-")
         if "/" in s[0]:
             t = s[0].split("/")
             t = int(t[0]) / int(t[1])
-            value = "{:.1f}".format( t)
+            value = "{:.1f}".format(t)
         else:
             t = 0
             if len(s) > 1:  # contains fraction
@@ -134,3 +143,30 @@ def _get_one_hot_encoder(map):
     ohe = OneHotEncoder(handle_unknown='ignore', categories='auto')
     ohe.fit(np.array(diff_values).reshape(-1, 1))
     return ohe
+
+
+def train_one_hot_encoder_in_corpus(list_of_titles: list):
+    nltk.download('stopwords')
+    nltk.download('punkt')
+    all = " ".join(list_of_titles).lower()
+
+    stop_words = set(stopwords.words('english'))
+    tokens = word_tokenize(all)
+
+    tokens = [i for i in tokens if i not in string.punctuation and i not in ["''", "\""]]  # remove punctuations
+    tokens = [t for t in tokens if t not in stop_words]  # remove stopwords
+    ohe = OneHotEncoder(categories='auto', handle_unknown='ignore')
+    ohe.fit(np.array(list(set(tokens))).reshape(-1, 1))  # keep only uniques
+    return ohe
+
+
+def get_binary_repr_for_title(title: str, ohe: OneHotEncoder):
+    stop_words = set(stopwords.words('english'))
+    tokens = word_tokenize(title.lower())
+    tokens = [i for i in tokens if i not in string.punctuation and i not in ["''", "\""]]  # remove punctuations
+    tokens = [t for t in tokens if t not in stop_words]  # remove stopwords
+    x = ohe.transform(np.array(tokens).reshape(-1, 1))
+    sum = x.A[0]
+    for s in x.A[1:]:
+        sum += s
+    return sum
