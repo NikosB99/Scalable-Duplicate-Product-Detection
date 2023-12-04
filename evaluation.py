@@ -57,36 +57,24 @@ if __name__ == "__main__":
     data = json.load(file)
     data_flattened = [product for key in list(data.keys()) for product in data[key]]
 
-    # with open("temp_files/lsh_performance_5.txt", "a+") as f:
-    #     for t in np.arange(0.05, 1.05, 0.05):
-    #         print(f"Testing for t = {t}")
-    #         for iter in range(5):
-    #             print(f"Iteration: {iter}")
-    #             boot = get_bootstrap(data_flattened)
-    #             duplicates, lsh_detected = calculate_duplicates(boot, 5, t, 1, distance="jaccard")
-    #             pq, pc, found = performance_lsh(lsh_detected)
-    #             f.write(f"{t},{pq},{found},{len(lsh_detected)}\n")
+    with open("temp_files/lsh_performance_5.txt", "a+") as f:
+        for t in np.arange(0.05, 1.05, 0.05):
+            print(f"Testing for t = {t}")
+            for iter in range(5):
+                print(f"Iteration: {iter}")
+                boot = get_bootstrap(data_flattened)
+                duplicates, lsh_detected = calculate_duplicates(boot, 5, t, 1, distance="jaccard")
+                pq, pc, found = performance_lsh(lsh_detected)
+                f.write(f"{t},{pq},{found},{len(lsh_detected)}\n")
 
-    # with open("temp_files/all_performance.txt", "a+") as f:
-    #     for distance in ["jaccard"]:
-    #         # for threshold in np.arange(0.7, 1, 0.1):
-    #         #     print(f"Testing for threshold = {threshold} and distance = {distance}")
-    #         for iter in range(1):
-    #             print(f"Iteration: {iter}")
-    #             boot = get_bootstrap(data_flattened)
-    #             duplicates, lsh_detected = calculate_duplicates(boot, 5, 0.1, 1, distance=distance)
-    #             precision, recall, found = performance(duplicates)
-    #             f.write(f"{distance},{1},{precision},{recall},{len(lsh_detected)}\n")
+    with open("temp_files/all_performance.txt", "a+") as f:
+        for distance in ["jaccard"]:
+            # for threshold in np.arange(0.5, 1, 0.05):
+            #     print(f"Testing for threshold = {threshold} and distance = {distance}")
+            for iter in range(1):
+                print(f"Iteration: {iter}")
+                boot = get_bootstrap(data_flattened)
+                duplicates, lsh_detected = calculate_duplicates(boot, 5, 0.1, 1, distance=distance)
+                precision, recall, found = performance(duplicates)
+                f.write(f"{distance},{1},{precision},{recall},{len(lsh_detected)}\n")
 
-data_valid=set()
-for threshold in np.arange(0.5,1,0.05):
-    with open("temp_files/distance_jacc.txt", "r") as f:
-        for line in f:
-            s = line.strip().split(",")
-            if float(s[0])<threshold:
-                data_valid.add(s[1])
-        c=0
-        for d in data_valid:
-            if find_if_a_pair_is_duplicate(data_flattened,d):
-                c+=1
-        print(f"threshold: {threshold}, found: {c}")
