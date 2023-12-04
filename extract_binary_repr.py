@@ -17,14 +17,18 @@ def get_binary_repr(mappers_and_encoders, ohe_title, json_obj):
         encoder = me[1][1]
         key = me[0]
         if key in features:
-            mapped_value = mapper[features[key]]
-            encoded = encoder.transform(np.array(mapped_value).reshape(-1, 1))
-            combined = encoded.A[0]
-            if len(encoded.A) > 1:
-                for y in encoded.A[1:]:
-                    combined = combined + y
-            for b in combined:
-                signature.append(b)
+            if features[key] in mapper:
+                mapped_value = mapper[features[key]]
+                encoded = encoder.transform(np.array(mapped_value).reshape(-1, 1))
+                combined = encoded.A[0]
+                if len(encoded.A) > 1:
+                    for y in encoded.A[1:]:
+                        combined = combined + y
+                for b in combined:
+                    signature.append(b)
+            else:
+                for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
+                    signature.append(0)
         else:
             for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
                 signature.append(0)
@@ -107,23 +111,18 @@ def _handle_boolean(values):
 def _handle_inches(values):
     map = {}
     for x in set(values):
-        temp = "".join(
-            [i for i in x.replace("\"", "") if (i.isnumeric() or i in ["/", ",", ".", "-", " "])])  # remove inches
-        s = temp.split("-")
-        if "/" in s[0]:
-            t = s[0].split("/")
-            t = int(t[0]) / int(t[1])
-            value = "{:.1f}".format(t)
-        else:
-            t = 0
-            if len(s) > 1:  # contains fraction
-                try:
-                    t = s[1].split("/")
-                    t = int(t[0]) / int(t[1])
-                except:
-                    t = 0
-            value = "{:.1f}".format(float(s[0]) + t)
-        map[x] = [value]
+        detected = re.findall(r'([0-9]+(\s|)-(\s|)[0-9]+\/[0-9]+)|([0-9]+\.[0-9]+)|([0-9]+)',x)
+        nums = []
+        for d in detected:
+            for e in d:
+                if e!="":
+                    if "/" in e:
+                        e1 = re.findall(r'\d+',e)
+                        e1 = int(e1[0]) + int(e1[1]) / int(e1[2])
+                        nums.append("{:.1f}".format(e1))
+                    else:
+                        nums.append("{:.1f}".format(float(e)))
+        map[x]=nums
     return map, _get_one_hot_encoder(map)
 
 

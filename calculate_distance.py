@@ -5,7 +5,37 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
 
-def mcs_distance(tva, tvb, a, b, g, mi):
+def jaccard_distance(s1: list, s2: list) -> float:
+    '''
+
+    :param s1: signature of the first item
+    :param s2: signature of the second item
+    :return: the jaccard similarity of two signatures based on the connection between MinHashing and Jaccard Similarity
+    '''
+    count = 0
+    for x, y in zip(s1, s2):
+        if x == y:
+            count += 1
+    return 1 - (float(count) / len(s1))  # 1 - similarity to get the distance
+
+
+def jaccard_distance_packed(arg):
+    '''
+
+    :param s1: signature of the first item
+    :param s2: signature of the second item
+    :return: the jaccard similarity of two signatures based on the connection between MinHashing and Jaccard Similarity
+    '''
+    count = 0
+    for x, y in zip(arg[0], arg[1]):
+        if x == y:
+            count += 1
+    return (1 - (float(count) / len(arg[0])),arg[2])  # 1 - similarity to get the distance
+
+def msm_distance_packed(args):
+    return (msm_distance(args[0], args[1], args[2], args[3], args[4], args[5]),args[6])
+
+def msm_distance(tva, tvb, a, b, g, mi):
     sim = 0
     avgSim = 0
     m = 0
@@ -53,7 +83,7 @@ def calcSim(a: str, b: str) -> float:
     ag = list(ngrams(a, 3))
     bg = list(ngrams(b, 3))
     common = sum([1 if x1 in bg else 0 for x1 in ag])
-    return 1-(len(ag) + len(bg) - common) / (len(ag) + len(bg))
+    return 1 - (len(ag) + len(bg) - common) / (len(ag) + len(bg))
 
 
 def exMw(tv, list_of_keys: set) -> set:
