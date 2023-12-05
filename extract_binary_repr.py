@@ -7,8 +7,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import string
 
-
-# list(encoded.A[0])
 def get_binary_repr(mappers_and_encoders, ohe_title, json_obj):
     signature = []
     features = json_obj['featuresMap']
@@ -27,7 +25,8 @@ def get_binary_repr(mappers_and_encoders, ohe_title, json_obj):
                 for b in combined:
                     signature.append(b)
             else:
-                for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
+                for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[
+                    0]:  # append zeros equal to the size of this
                     signature.append(0)
         else:
             for _ in encoder.transform(np.array("N/A").reshape(-1, 1)).A[0]:  # append zeros equal to the size of this
@@ -111,18 +110,18 @@ def _handle_boolean(values):
 def _handle_inches(values):
     map = {}
     for x in set(values):
-        detected = re.findall(r'([0-9]+(\s|)-(\s|)[0-9]+\/[0-9]+)|([0-9]+\.[0-9]+)|([0-9]+)',x)
+        detected = re.findall(r'([0-9]+(\s|)-(\s|)[0-9]+\/[0-9]+)|([0-9]+\.[0-9]+)|([0-9]+)', x)
         nums = []
         for d in detected:
             for e in d:
-                if e!="":
+                if e != "":
                     if "/" in e:
-                        e1 = re.findall(r'\d+',e)
+                        e1 = re.findall(r'\d+', e)
                         e1 = int(e1[0]) + int(e1[1]) / int(e1[2])
                         nums.append("{:.1f}".format(e1))
                     else:
                         nums.append("{:.1f}".format(float(e)))
-        map[x]=nums
+        map[x] = nums
     return map, _get_one_hot_encoder(map)
 
 

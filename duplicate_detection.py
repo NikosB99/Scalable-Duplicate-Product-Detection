@@ -6,7 +6,7 @@ from sympy.solvers import solve
 from sympy.abc import x, r
 
 from extract_binary_repr import get_common_keys, get_map_values, get_binary_repr, train_one_hot_encoder_in_corpus
-from calculate_distance import msm_distance, jaccard_distance, jaccard_distance_packed, msm_distance_packed
+from calculate_distance import jaccard_distance_packed, msm_distance_packed
 from lsh import use_min_hash, lsh
 
 
@@ -24,6 +24,7 @@ def calculate_duplicates(data_flattened, k, t, threshold, shuffles=0.1, a=0.95, 
     :param b: distance parameter-> determines over which similarity the title will be considered in the similarity measurement
     :param g: distance parameter-> determines over which similarity the keys will be considered identical
     :param mi: distance parameter-> is the standard weight reserved for the similarity of the titles
+    :param distance: determines the different distance used to calculate the duplicate pairs
     :return: a list of the detected duplicate pairs and the list of the candidate pairs from the LSH method
     '''
     complete_keys = {}
@@ -70,63 +71,18 @@ def calculate_duplicates(data_flattened, k, t, threshold, shuffles=0.1, a=0.95, 
 
     detected_duplicates = []
     if distance == "msm":
-        # create a thread pool
         with Pool(12) as p:
             results = list(tqdm(p.imap(msm_distance_packed, args), total=len(args),
                                 desc="Calculating duplicates using distance MSM"))
-            with open("temp_files/distance_msm.txt","w") as f:
-                for res in results:
-                    f.write(f"{res[0]},{res[1]}\n")
-            # for res in results:
-            #     if res[0] > threshold:
-            #         detected_duplicates.append(res[1])
+            for res in results:
+                if res[0] > threshold:
+                    detected_duplicates.append(res[1])
     else:
-        # create a thread pool
         with Pool(12) as p:
             results = list(tqdm(p.imap(jaccard_distance_packed, args_jac), total=len(args_jac),
                                 desc="Calculating duplicates using distance Jaccard"))
-            with open("temp_files/distance_jacc.txt","w") as f:
-                for res in results:
-                    f.write(f"{res[0]},{res[1]}\n")
-            # for res in results:
-            #     if res[0] > threshold:
-            #         detected_duplicates.append(res[1])
+            for res in results:
+                if res[0] > threshold:
+                    detected_duplicates.append(res[1])
 
-    # pool = ThreadPool(processes=12)
-    # detected_duplicates = []
-    # results= pool.imap(jaccard_distance_packed, tqdm(args_jac, total=len(args_jac)))
-    # for result in
-    #
-    # pool.imap(msm_distance_packed,
-    #                 tqdm(args, total=len(args), desc="Calculating duplicates using distance MSM"))):
-    # if result[0] <= threshold:
-    #     detected_duplicates.append(result[1])
-
-    # pool.join()
-    # pool.close()
-    # results = pool.starmap(msm_distance,args)
-    # results=pool.starmap(jaccard_distance,args_jac)
-
-    # with ThreadPool(12) as pool:
-    #     results = pool.imap(jaccard_distance_packed, tqdm(args_jac, total=len(args_jac)))
-
-    # detected_duplicates = []
-    # for pair in tqdm(pairs_to_check, desc="Calculating distance between pairs to detect duplicates",
-    #                  total=len(pairs_to_check)):
-    #     indices = pair.split("-")
-    #     if distance == "msm":  # calculate MSM distance
-    #
-    #
-    #         dist = msm_distance(data_flattened[int(indices[0])], data_flattened[int(indices[1])], a, b, g, mi)
-    #     else:
-    #         dist = jaccard_distance(signatures[int(indices[0])], signatures[int(indices[1])])
-    #     if dist < threshold:  # Calculate Jaccard distance
-    #         detected_duplicates.append([int(indices[0]), int(indices[1])])
-    # return detected_duplicates, pairs_to_check
     return detected_duplicates, pairs_to_check
-
-# if __name__ == "__main__":
-#     file = open('tvs.json')
-#     data = json.load(file)
-#
-#     duplicates = calculate_duplicates(data, 10, 0.05, 1)
